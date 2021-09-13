@@ -26,8 +26,7 @@ async def on_message(message):
     if isinstance(channel, discord.DMChannel):
         pass
         # todo: surprise attack
-
-    elif isinstance(channel, discord.TextChannel) and channel.name == '起床報告':
+    elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
         if (match_w := re.match(WAKEPATTERN, message.content)) is not None:
             if (overwrite_w := match_w.group(1)) is not None:
                 pass
