@@ -1,9 +1,12 @@
 import re
 import os
 
+from datetime import timezone
+
 import discord
 
-from settings import CHANNEL_ID, DISCORD_TOKEN
+from db import insert_sleeptime
+from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
 
 WAKEPATTERN = r"^(?:[お起]きた|起床|おはよう)(.+)?"
@@ -27,6 +30,8 @@ async def on_message(message):
         pass
         # todo: surprise attack
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
+        time = message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=TIMEZONE)
+
         if (match_w := re.match(WAKEPATTERN, message.content)) is not None:
             if (overwrite_w := match_w.group(1)) is not None:
                 pass
@@ -40,7 +45,6 @@ async def on_message(message):
                 pass
                 # todo: overwrite
             else:
-                pass
-                # todo: memory the time
+                insert_sleeptime(message.author.id, time)
 
 client.run(DISCORD_TOKEN)
