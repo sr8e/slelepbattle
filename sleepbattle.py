@@ -3,8 +3,8 @@ import os
 
 import discord
 
+from settings import CHANNEL_ID, DISCORD_TOKEN
 
-DISCORD_TOKEN = os.environ.get("DISCORDBOT_TOKEN")
 
 WAKEPATTERN = r"^(?:[お起]きた|起床|おはよう)(.+)?"
 SLEEPPATTERN = r"^(?:[ね寝]る|就寝|おやすみ|ぽやしみ)(.+)?"
