@@ -29,8 +29,7 @@ def calculate_score(sleeptime, waketime, lastwaketime):
 
     sleep_score = max(1 - max(sleep_f - sleeptime, sleeptime - sleep_l, TD_ZERO) / TD_WIDTH, 0)
     wake_score = max(1 - max(wake_f - waketime, waketime - wake_l, TD_ZERO) / TD_WIDTH, 0)
-    habit_score = 1 if abs(lastwaketime + timedelta(days=1) - waketime) < TD_HABIT else 0.9
-    print(f"{sleep_score}, {wake_score}, {habit_score}")
+    habit_score = 1 if lastwaketime is None or abs(lastwaketime + timedelta(days=1) - waketime) < TD_HABIT else 0.9
 
     return date, 100 * sleep_score * wake_score * habit_score
 
