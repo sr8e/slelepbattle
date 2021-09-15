@@ -82,17 +82,21 @@ async def on_message(message):
                 if not db.is_last_sleep_completed(uid):
                     await channel.send("前回の睡眠が完了していません！")
                     return
+
+                sleeptime = time
                 if (spectime_s := match_s.group(1)) is not None:
                     if (match_spec_s := re.search(TIMESPECPATTERN, spectime_s)) is None:
                         await channel.send("時刻指定フォーマットに合致しません！(`[[m]m/[d]d] [H]H:MM`)")
                         return
-                    spec_time = get_datetime_from_input(*match_spec_s.group(1, 2))
+                    sleeptime = get_datetime_from_input(*match_spec_s.group(1, 2))
+
                     last_wake = db.get_last_wake(uid)
-                    if spec_time < last_wake[1]:
+                    if last_wake is not None and sleeptime < last_wake[1]:
                         await channel.send("就寝時刻が前回の起床より早いです。")
                         return
 
-                    db.insert_sleeptime(message.author.id, spec_time, message.id)
-                    await channel.send(f"睡眠を記録しました: {spec_time}")
+                db.insert_sleeptime(uid, sleeptime, message.id)
+                await channel.send(f"睡眠を記録しました: {sleeptime}")
+
 
 client.run(DISCORD_TOKEN)
