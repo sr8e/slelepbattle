@@ -1,7 +1,6 @@
 import re
-import os
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 import discord
 
@@ -51,9 +50,14 @@ def get_datetime_from_input(date, time):
     return dt
 
 
+def set_timezone(utctime):
+    return utctime.replace(tzinfo=timezone.utc).astimezone(tz=TIMEZONE)
+
+
 @client.event
 async def on_ready():
     print(f'{client.user} is ready.')
+
 
 @client.event
 async def on_message(message):
@@ -67,7 +71,7 @@ async def on_message(message):
         pass
         # todo: surprise attack
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
-        time = message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=TIMEZONE)
+        time = set_timezone(message.created_at)
 
         if (match_s := re.search(SLEEPPATTERN, message.content, flags=re.M)) is not None:
             with DBManager() as db:
