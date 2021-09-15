@@ -5,7 +5,7 @@ from datetime import date, datetime, time, timedelta, timezone
 
 import discord
 
-from db import insert_sleeptime
+from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
 
@@ -62,6 +62,7 @@ async def on_message(message):
         return
 
     channel = message.channel
+    uid = message.author.id
 
     if isinstance(channel, discord.DMChannel):
         pass
@@ -69,7 +70,7 @@ async def on_message(message):
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
         time = message.created_at.replace(tzinfo=timezone.utc).astimezone(tz=TIMEZONE)
 
-        if (match_w := re.match(WAKEPATTERN, message.content)) is not None:
+        if (match_w := re.search(WAKEPATTERN, message.content, flags=re.M)) is not None:
             if (overwrite_w := match_w.group(1)) is not None:
                 pass
                 # todo: overwrite
@@ -77,11 +78,22 @@ async def on_message(message):
                 pass
                 # todo: calculate and store the score
 
-        elif (match_s := re.match(SLEEPPATTERN, message.content)) is not None:
-            if (overwrite_s := match_s.group(1)) is not None:
-                pass
-                # todo: overwrite
-            else:
-                insert_sleeptime(message.author.id, time)
+        if (match_s := re.search(SLEEPPATTERN, message.content, flags=re.M)) is not None:
+            with DBManager() as db:
+                if not db.is_last_sleep_completed(uid):
+                    await channel.send("前回の睡眠が完了していません！")
+                    return
+                if (spectime_s := match_s.group(1)) is not None:
+                    if (match_spec_s := re.search(TIMESPECPATTERN, spectime_s)) is None:
+                        await channel.send("時刻指定フォーマットに合致しません！(`[[m]m/[d]d] [H]H:MM`)")
+                        return
+                    spec_time = get_datetime_from_input(*match_spec_s.group(1, 2))
+                    last_wake = db.get_last_wake(uid)
+                    if spec_time < last_wake[1]:
+                        await channel.send("就寝時刻が前回の起床より早いです。")
+                        return
+
+                    db.insert_sleeptime(message.author.id, spec_time, message.id)
+                    await channel.send(f"睡眠を記録しました: {spec_time}")
 
 client.run(DISCORD_TOKEN)
