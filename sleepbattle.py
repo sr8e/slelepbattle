@@ -1,7 +1,7 @@
 import re
 import os
 
-from datetime import datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 import discord
 
@@ -11,6 +11,7 @@ from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
 WAKEPATTERN = r"^(?:[お起]きた|起床|おはよう)(.+)?"
 SLEEPPATTERN = r"^(?:[ね寝]る|就寝|おやすみ|ぽやしみ)(.+)?"
+TIMESPECPATTERN = r"(\d{1,2}/\d{1,2})?\s*(\d{1,2}:\d{2})"
 
 client = discord.Client()
 
@@ -32,6 +33,23 @@ def calculate_score(sleeptime, waketime, lastwaketime):
     print(f"{sleep_score}, {wake_score}, {habit_score}")
 
     return date, 100 * sleep_score * wake_score * habit_score
+
+
+def get_datetime_from_input(date, time):
+    now = datetime.now().astimezone(tz=TIMEZONE)
+    t = datetime.strptime(time, "%H:%M").replace(tzinfo=TIMEZONE).timetz()
+    if date is None:
+        # interpret as the date is today or yesterday
+        dt = datetime.combine(now.date(), t)
+        if now < dt:
+            dt -= timedelta(days=1)
+        return dt
+
+    d = datetime.strptime(date, "%m/%d").date().replace(year=now.year)
+    dt = datetime.combine(d, t)
+    if now < dt:
+        dt = dt.replace(year=dt.year - 1)
+    return dt
 
 
 @client.event
