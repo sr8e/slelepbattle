@@ -20,21 +20,30 @@ class DBManager:
 
     def insert_sleeptime(self, uid, sleeptime, post_id):
         with self.conn.cursor() as cur:
-            cur.execute(f"insert into sleeptime (uid, sleeptime, post_id) values ({uid}, '{sleeptime.strftime(DATETIME_FORMAT)}', {post_id}) returning id;")
+            cur.execute(
+                "insert into sleeptime (uid, sleeptime, post_id) values "
+                f"({uid}, '{sleeptime.strftime(DATETIME_FORMAT)}', {post_id}) returning id;"
+            )
             inserted_id = cur.fetchone()[0]
             self.conn.commit()
             return inserted_id
 
     def insert_waketime(self, uid, waketime, post_id):
         with self.conn.cursor() as cur:
-            cur.execute(f"insert into waketime (uid, waketime, post_id) values ({uid}, '{waketime.strftime(DATETIME_FORMAT)}', {post_id}) returning id;")
+            cur.execute(
+                "insert into waketime (uid, waketime, post_id) values "
+                f"({uid}, '{waketime.strftime(DATETIME_FORMAT)}', {post_id}) returning id;"
+            )
             inserted_id = cur.fetchone()[0]
             self.conn.commit()
             return inserted_id
 
     def insert_score(self, uid, sleep_pk, wake_pk, score, date):
         with self.conn.cursor() as cur:
-            cur.execute(f"insert into score (uid, sleep_pk, wake_pk, score, date) values ({uid}, {sleep_pk}, {wake_pk}, {score}, '{date.strftime(DATE_FORMAT)}');")
+            cur.execute(
+                "insert into score (uid, sleep_pk, wake_pk, score, date) values "
+                f"({uid}, {sleep_pk}, {wake_pk}, {score}, '{date.strftime(DATE_FORMAT)}');"
+            )
             self.conn.commit()
 
     def is_last_sleep_completed(self, uid):
@@ -60,5 +69,8 @@ class DBManager:
 
     def get_score(self, uid, date):
         with self.conn.cursor() as cur:
-            cur.execute(f"select id, sleep_pk, wake_pk, score from score where uid={uid} and date='{date.strftime(DATE_FORMAT)}';")
+            cur.execute(
+                "select id, sleep_pk, wake_pk, score from score where "
+                f"uid={uid} and date='{date.strftime(DATE_FORMAT)}';"
+            )
             return cur.fetchone()
