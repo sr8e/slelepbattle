@@ -108,7 +108,7 @@ async def on_message(message):
                         return
                     waketime = get_datetime_from_input(*match_spec_w.group(1, 2))
                     if waketime < last_sleep[1]:
-                        await channel.send("就寝時刻が就寝より早いです。")
+                        await channel.send("起床時刻が就寝より早いです。")
                         return
 
                 last_wake = db.get_last_wake(uid)
