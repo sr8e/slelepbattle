@@ -108,7 +108,7 @@ async def on_message(message):
                         return
                     waketime = get_datetime_from_input(*match_spec_w.group(1, 2))
                     if waketime < last_sleep[1]:
-                        await channel.send("就寝時刻が就寝より早いです。")
+                        await channel.send("起床時刻が就寝より早いです。")
                         return
 
                 last_wake = db.get_last_wake(uid)
@@ -118,12 +118,12 @@ async def on_message(message):
                 await channel.send(f'起床を記録しました: {waketime}')
 
                 date, score = calculate_score(last_sleep[1], waketime, last_waketime)
-                if (sameday_score := db.get_score(uid, date)) is None or sameday_score[3] < score:
+                if (sameday_score := db.get_score(uid, date)) is None:
                     db.insert_score(uid, last_sleep[0], wake_pk, score, date)
-                    if sameday_score is None:
-                        await channel.send(f"{date}のスコアを記録しました: {score}")
-                    else:
-                        await channel.send(f"{date}のスコアを更新しました: {sameday_score[3]} -> {score}")
+                    await channel.send(f"{date}のスコアを記録しました: {score}")
+                elif sameday_score[3] < score:
+                    db.update_score(sameday_score[0], last_sleep[0], wake_pk, score)
+                    await channel.send(f"{date}のスコアを更新しました: {sameday_score[3]} -> {score}")
                 else:
                     await channel.send(f"{date}の既存のスコア{sameday_score[3]}より低いので更新されませんでした: {score}")
 

@@ -46,6 +46,14 @@ class DBManager:
             )
             self.conn.commit()
 
+    def update_score(self, pk, sleep_pk, wake_pk, score):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"update score set (sleep_pk, wake_pk, score)=({sleep_pk}, {wake_pk}, {score}) "
+                f"where id={pk};"
+            )
+            self.conn.commit()
+
     def is_last_sleep_completed(self, uid):
         with self.conn.cursor() as cur:
             res_sleeptime = self.get_last_sleep(uid)
