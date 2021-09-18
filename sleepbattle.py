@@ -4,6 +4,7 @@ from datetime import datetime, time, timedelta, timezone
 
 import discord
 
+from ui import who_to_attack
 from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
@@ -16,7 +17,9 @@ DISP_DATE_FORMAT = "%m/%d"
 DISP_TIME_FORMAT = "%H:%M"
 DISP_DATETIME_FORMAT = "%m/%d %H:%M"
 
-client = discord.Client()
+intent = discord.Intents.default()
+intent.members = True
+client = discord.Client(intents=intent)
 
 
 def calculate_score(sleeptime, waketime, lastwaketime):
@@ -70,12 +73,24 @@ async def on_message(message):
 
     channel = message.channel
     uid = message.author.id
+    time = set_timezone(message.created_at)
 
     if isinstance(channel, discord.DMChannel):
-        pass
-        # todo: surprise attack
+        with DBManager() as db:
+            state = db.get_attack_state(uid)
+            if state == 0:
+                d = time.date()
+                week_start = d - timedelta(days=(d.weekday() + 1) % 7)
+                uids = db.get_active_users(week_start)
+                users = [client.get_user(u) for u in uids]
+                if len(users) == 0:
+                    await channel.send("攻撃可能な対象がまだいません。")
+                    return
+
+                await channel.send("対象を選択してください。", view=who_to_attack(users))
+                db.set_attack_state(uid, 1)
+
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
-        time = set_timezone(message.created_at)
 
         if (match_s := re.search(SLEEPPATTERN, message.content, flags=re.M)) is not None:
             with DBManager() as db:
