@@ -82,3 +82,24 @@ class DBManager:
                 f"uid={uid} and date='{date.strftime(DATE_FORMAT)}';"
             )
             return cur.fetchone()
+
+    def get_attack_state(self, uid):
+        with self.conn.cursor() as cur:
+            cur.execute(f"select state from attack where uid={uid};")
+            if (res := cur.fetchone()) is not None:
+                return res[0]
+
+            # create a record
+            cur.execute(f"insert into attack (uid, state) values ({uid}, 0);")
+            self.conn.commit()
+            return 0
+
+    def get_active_users(self, date_since):
+        with self.conn.cursor() as cur:
+            cur.execute(f"select distinct uid from score where date>='{date_since.strftime(DATE_FORMAT)}';")
+            return [t[0] for t in cur.fetchall()]
+
+    def set_attack_state(self, uid, state):
+        with self.conn.cursor() as cur:
+            cur.execute(f"update attack set state={state} where uid={uid};")
+            self.conn.commit()
