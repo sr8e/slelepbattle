@@ -12,6 +12,10 @@ WAKEPATTERN = r"^(?:[お起]きた|起床|おはよう)(.+)?"
 SLEEPPATTERN = r"^(?:[ね寝]る|就寝|おやすみ|ぽやしみ)(.+)?"
 TIMESPECPATTERN = r"(\d{1,2}/\d{1,2})?\s*(\d{1,2}:\d{2})"
 
+DISP_DATE_FORMAT = "%m/%d"
+DISP_TIME_FORMAT = "%H:%M"
+DISP_DATETIME_FORMAT = "%m/%d %H:%M"
+
 client = discord.Client()
 
 
@@ -35,7 +39,7 @@ def calculate_score(sleeptime, waketime, lastwaketime):
 
 def get_datetime_from_input(date, time):
     now = datetime.now().astimezone(tz=TIMEZONE)
-    t = datetime.strptime(time, "%H:%M").replace(tzinfo=TIMEZONE).timetz()
+    t = datetime.strptime(time, DISP_TIME_FORMAT).replace(tzinfo=TIMEZONE).timetz()
     if date is None:
         # interpret as the date is today or yesterday
         dt = datetime.combine(now.date(), t)
@@ -43,7 +47,7 @@ def get_datetime_from_input(date, time):
             dt -= timedelta(days=1)
         return dt
 
-    d = datetime.strptime(date, "%m/%d").date().replace(year=now.year)
+    d = datetime.strptime(date, DISP_DATE_FORMAT).date().replace(year=now.year)
     dt = datetime.combine(d, t)
     if now < dt:
         dt = dt.replace(year=dt.year - 1)
@@ -92,7 +96,7 @@ async def on_message(message):
                         return
 
                 db.insert_sleeptime(uid, sleeptime, message.id)
-                await channel.send(f"睡眠を記録しました: {sleeptime}")
+                await channel.send(f"睡眠を記録しました: {sleeptime.strftime(DISP_DATETIME_FORMAT)}")
 
         if (match_w := re.search(WAKEPATTERN, message.content, flags=re.M)) is not None:
             with DBManager() as db:
@@ -115,17 +119,22 @@ async def on_message(message):
                 last_waketime = last_wake[1] if last_wake is not None else None
 
                 wake_pk = db.insert_waketime(uid, waketime, message.id)
-                await channel.send(f'起床を記録しました: {waketime}')
+                await channel.send(f'起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}')
 
                 date, score = calculate_score(last_sleep[1], waketime, last_waketime)
                 if (sameday_score := db.get_score(uid, date)) is None:
                     db.insert_score(uid, last_sleep[0], wake_pk, score, date)
-                    await channel.send(f"{date}のスコアを記録しました: {score}")
+                    await channel.send(f"{date.strftime(DISP_DATE_FORMAT)}のスコアを記録しました: {score:.4g}")
                 elif sameday_score[3] < score:
                     db.update_score(sameday_score[0], last_sleep[0], wake_pk, score)
-                    await channel.send(f"{date}のスコアを更新しました: {sameday_score[3]} -> {score}")
+                    await channel.send(
+                        f"{date.strftime(DISP_DATE_FORMAT)}のスコアを更新しました: "
+                        f"{sameday_score[3]:.4g} -> {score:.4g}")
                 else:
-                    await channel.send(f"{date}の既存のスコア{sameday_score[3]}より低いので更新されませんでした: {score}")
+                    await channel.send(
+                        f"{date.strftime(DISP_DATE_FORMAT)}の既存のスコア{sameday_score[3]:.4g}"
+                        f"より低いので更新されませんでした: {score:.4g}"
+                    )
 
 
 client.run(DISCORD_TOKEN)
