@@ -2,7 +2,7 @@ aiohttp==3.7.4.post0
 async-timeout==3.0.1
 attrs==21.2.0
 chardet==4.0.0
-discord.py==1.7.3
+discord.py==2.0.0a3575+g45d498c1
 flake8==3.9.2
 idna==3.2
 mccabe==0.6.1
