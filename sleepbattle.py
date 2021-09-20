@@ -82,12 +82,12 @@ async def on_message(message):
                 d = time.date()
                 week_start = d - timedelta(days=(d.weekday() + 1) % 7)
                 uids = db.get_active_users(week_start)
-                users = [client.get_user(u) for u in uids]
+                users = [client.get_user(u) for u in uids if u != uid]
                 if len(users) == 0:
                     await channel.send("攻撃可能な対象がまだいません。")
                     return
 
-                await channel.send("対象を選択してください。", view=who_to_attack(users))
+                await channel.send("対象を選択してください。", view=who_to_attack(uid, users, d))
                 db.set_attack_state(uid, 1)
 
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:

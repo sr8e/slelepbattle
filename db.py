@@ -83,6 +83,14 @@ class DBManager:
             )
             return cur.fetchone()
 
+    def get_compare_score(self, my_uid, other_uid, date):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"select id, uid, score, date from score where uid in ({my_uid}, {other_uid}) "
+                f"and date>='{date.strftime(DATE_FORMAT)}'"
+            )
+            return cur.fetchall()
+
     def get_attack_state(self, uid):
         with self.conn.cursor() as cur:
             cur.execute(f"select state from attack where uid={uid};")
