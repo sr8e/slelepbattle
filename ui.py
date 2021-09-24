@@ -95,11 +95,6 @@ class UIViewManager:
 
     async def begin_configure(self, channel):
         with DBManager() as db:
-            state = db.get_attack_state(self.uid)
-
-            if state != 0:
-                return
-
             week_start = self.init_date - timedelta(days=(self.init_date.weekday() + 1) % 7)
             uids = db.get_active_users(week_start)
 

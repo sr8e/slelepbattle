@@ -138,3 +138,8 @@ class DBManager:
         with self.conn.cursor() as cur:
             cur.execute(f"select state, target, swap_date, attack_date from attack where uid={uid};")
             return cur.fetchone()
+
+    def delete_attack_record(self, uid):
+        with self.conn.cursor() as cur:
+            cur.execute(f"delete from attack where uid={uid};")
+            self.conn.commit()

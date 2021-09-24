@@ -76,6 +76,28 @@ async def on_message(message):
     time = set_timezone(message.created_at)
 
     if isinstance(channel, discord.DMChannel):
+        with DBManager() as db:
+            state = db.get_attack_state(uid)
+
+            if message.content.startswith("abort") and 0 < state < 4:
+                db.delete_attack_record(uid)
+                await channel.send("攻撃の設定を中断しました。")
+                return
+            if message.content.startswith("cancel") and 0 < state < 5:
+                db.delete_attack_record(uid)
+                await channel.send("攻撃を中止しました。")
+                return
+
+        if 0 < state < 4:
+            await channel.send("攻撃の設定が途中です。`abort` または `cancel` で中断します。")
+            return
+        if state == 4:
+            await channel.send("攻撃の設定が完了しています。`cancel` で攻撃を中止できます。")
+            return
+        if state == 5:
+            await channel.send("攻撃は完了しています。")
+            return
+
         vm = UIViewManager(uid, client, time.date())
         await vm.begin_configure(channel)
 
