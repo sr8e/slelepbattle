@@ -76,19 +76,8 @@ async def on_message(message):
     time = set_timezone(message.created_at)
 
     if isinstance(channel, discord.DMChannel):
-        with DBManager() as db:
-            state = db.get_attack_state(uid)
-            if state == 0:
-                d = time.date()
-                week_start = d - timedelta(days=(d.weekday() + 1) % 7)
-                uids = db.get_active_users(week_start)
-                users = [client.get_user(u) for u in uids if u != uid]
-                if len(users) == 0:
-                    await channel.send("攻撃可能な対象がまだいません。")
-                    return
-                vm = UIViewManager(uid, client, d)
-                await channel.send("対象を選択してください。", view=vm.who_to_attack(users))
-                db.set_attack_state(uid, 1)
+        vm = UIViewManager(uid, client, time.date())
+        await vm.begin_configure(channel)
 
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
 
