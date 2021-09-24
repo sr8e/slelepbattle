@@ -111,3 +111,30 @@ class DBManager:
         with self.conn.cursor() as cur:
             cur.execute(f"update attack set state={state} where uid={uid};")
             self.conn.commit()
+
+    def set_target(self, uid, target_uid):
+        with self.conn.cursor() as cur:
+            cur.execute(f"update attack set (state, target)=(2, {target_uid}) where uid={uid}")
+            self.conn.commit()
+
+    def set_swap_date(self, uid, swap_date):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                "update attack set (state, swap_date)="
+                f"(3, '{swap_date.strftime(DATE_FORMAT)}') where uid={uid};"
+            )
+            self.conn.commit()
+
+    def set_attack_date(self, uid, attack_date, confirmed_at):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"update attack set (state, attack_date, confirmed_at)="
+                f"(4, '{attack_date.strftime(DATE_FORMAT)}', '{confirmed_at.strftime(DATETIME_FORMAT)}') "
+                f"where uid={uid};"
+            )
+            self.conn.commit()
+
+    def get_attack_info(self, uid):
+        with self.conn.cursor() as cur:
+            cur.execute(f"select state, target, swap_date, attack_date from attack where uid={uid};")
+            return cur.fetchone()
