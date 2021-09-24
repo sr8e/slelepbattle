@@ -3,42 +3,134 @@ import discord
 from datetime import datetime, timedelta
 
 from db import DBManager
-from settings import DATE_FORMAT
+from settings import DATE_FORMAT, TIMEZONE
 
 
-class SelectTarget(discord.ui.Select):
+class BaseSelect(discord.ui.Select):
+    def __init__(self, view_manager, **kwargs):
+        self.vm = view_manager
+        self.uid = self.vm.uid
+        self.init_date = self.vm.init_date
+        super().__init__(**kwargs)
+
+    def week_start(self):
+        return self.init_date - timedelta(days=(self.init_date.weekday() + 1) % 7)
+
+
+class SelectTarget(BaseSelect):
     async def callback(self, interaction):
         target = int(interaction.data['values'][0])
-        uid_s, date_s, _ = interaction.data['custom_id'].split('_')
-        uid = int(uid_s)
-        date = datetime.strptime(date_s, DATE_FORMAT).date()
-        week_start = date - timedelta(days=(date.weekday() + 1) % 7)
 
         with DBManager() as db:
-            if db.get_attack_state(uid) != 0:
+            if db.get_attack_state(self.uid) != 1:
                 return
 
-            score_tup = db.get_compare_score(uid, target, week_start)
+            score_tup = db.get_compare_score(self.uid, target, self.week_start())
 
         scores = {}
         for t in score_tup:
             if t[3] not in scores:
                 scores[t[3]] = {}
             scores[t[3]][t[1]] = t[2]
-        scores = {d: scores[d] for d in scores if len(scores[d]) == 2 and scores[d][uid] < scores[d][target]}
-        if len(scores) == 0:
+        swappable = {d: v for d, v in scores.items() if len(v) == 2 and v[self.uid] < v[target]}
+
+        if len(swappable) == 0:
             await interaction.response.send_message("入れ替え可能な日がありません。別の対象を選択してください。")
 
-        await interaction.response.send_message("スコアを入れ替える日を選択してください。")
+        view = self.vm.when_to_swap(swappable, target)
+
+        await interaction.response.send_message("スコアを入れ替える日を選択してください。", view=view)
+        with DBManager() as db:
+            db.set_target(self.uid, target)
 
 
-def who_to_attack(uid, users, date):
-    view = discord.ui.View(timeout=60)
-    options = [discord.SelectOption(label=u.name, value=u.id) for u in users]
-    selection = SelectTarget(
-        custom_id=f"{uid}_{date.strftime(DATE_FORMAT)}_TARGET",
-        placeholder="攻撃対象を選択...",
-        options=options
-    )
-    view.add_item(selection)
-    return view
+class SelectSwapDate(BaseSelect):
+    async def callback(self, interaction):
+        swap_date = datetime.strptime(interaction.data['values'][0], DATE_FORMAT).date()
+
+        week_start = self.week_start()
+        attackable = [
+            week_start + timedelta(days=i)
+            for i in range((self.init_date.weekday() + 1) % 7 + 2, 9)
+        ]
+
+        with DBManager() as db:
+            if db.get_attack_state(self.uid) != 2:
+                return
+
+            db.set_swap_date(self.uid, swap_date)
+
+        view = self.vm.when_to_attack(attackable)
+        await interaction.response.send_message("攻撃を実行する日を選択してください。", view=view)
+
+
+class SelectAttackDate(BaseSelect):
+    async def callback(self, interaction):
+        attack_date = datetime.strptime(interaction.data['values'][0], DATE_FORMAT).date()
+
+        with DBManager() as db:
+            if db.get_attack_state(self.uid) != 3:
+                return
+
+            db.set_attack_date(self.uid, attack_date, datetime.now().astimezone(tz=TIMEZONE))
+            info = db.get_attack_info(self.uid)
+
+        target_u = self.vm.client.get_user(info[1])
+
+        await interaction.response.send_message(
+            f"攻撃の予約を完了しました (対象: {target_u.name}, 入替日: {info[2].strftime('%m/%d')}, "
+            f"攻撃日: {attack_date.strftime('%m/%d')})"
+        )
+
+
+class UIViewManager:
+    def __init__(self, uid, client, init_date):
+        self.client = client
+        self.init_date = init_date
+        self.uid = uid
+
+    def who_to_attack(self, users):
+        view = discord.ui.View(timeout=60)
+        options = [discord.SelectOption(label=u.name, value=u.id) for u in users]
+        selection = SelectTarget(
+            self,
+            placeholder="攻撃対象を選択...",
+            options=options
+        )
+        view.add_item(selection)
+        return view
+
+    def when_to_swap(self, swappable_dates, target):
+        view = discord.ui.View(timeout=60)
+        options = [
+            discord.SelectOption(
+                label=d.strftime("%m/%d (%a)"),
+                value=d.strftime(DATE_FORMAT),
+                description=f"Your Point: {v[self.uid]:.4g}, Target's Point: {v[target]:.4g}"
+            )
+            for d, v in swappable_dates.items()
+        ]
+        selection = SelectSwapDate(
+            self,
+            placeholder="スコアを入れ替える日を選択...",
+            options=options
+        )
+        view.add_item(selection)
+        return view
+
+    def when_to_attack(self, attackable_dates):
+        view = discord.ui.View(timeout=60)
+        options = [
+            discord.SelectOption(
+                label=d.strftime("%m/%d (%a)"),
+                value=d.strftime(DATE_FORMAT)
+            )
+            for d in attackable_dates
+        ]
+        selection = SelectAttackDate(
+            self,
+            placeholder="攻撃をする日を選択...",
+            options=options
+        )
+        view.add_item(selection)
+        return view

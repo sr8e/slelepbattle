@@ -4,7 +4,7 @@ from datetime import datetime, time, timedelta, timezone
 
 import discord
 
-from ui import who_to_attack
+from ui import UIViewManager
 from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
@@ -86,8 +86,8 @@ async def on_message(message):
                 if len(users) == 0:
                     await channel.send("攻撃可能な対象がまだいません。")
                     return
-
-                await channel.send("対象を選択してください。", view=who_to_attack(uid, users, d))
+                vm = UIViewManager(uid, client, d)
+                await channel.send("対象を選択してください。", view=vm.who_to_attack(users))
                 db.set_attack_state(uid, 1)
 
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
