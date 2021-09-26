@@ -148,7 +148,7 @@ async def on_message(message):
                 await channel.send(f'起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}')
 
                 date, score = calculate_score(last_sleep[1], waketime, last_waketime)
-                if (sameday_score := db.get_score(uid, date)) is None:
+                if (sameday_score := db.get_raw_score(uid, date)) is None:
                     db.insert_score(uid, last_sleep[0], wake_pk, score, date)
                     await channel.send(f"{date.strftime(DISP_DATE_FORMAT)}のスコアを記録しました: {score:.4g}")
                 elif sameday_score[3] < score:

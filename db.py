@@ -75,7 +75,7 @@ class DBManager:
             cur.execute(f"select id, waketime, post_id from waketime where uid={uid} order by id desc;")
             return cur.fetchone()
 
-    def get_score(self, uid, date):
+    def get_raw_score(self, uid, date):
         with self.conn.cursor() as cur:
             cur.execute(
                 "select id, sleep_pk, wake_pk, score from score where "
