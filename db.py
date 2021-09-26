@@ -41,8 +41,8 @@ class DBManager:
     def insert_score(self, uid, sleep_pk, wake_pk, score, date):
         with self.conn.cursor() as cur:
             cur.execute(
-                "insert into score (uid, sleep_pk, wake_pk, score, date) values "
-                f"({uid}, {sleep_pk}, {wake_pk}, {score}, '{date.strftime(DATE_FORMAT)}');"
+                "insert into score (uid, sleep_pk, wake_pk, score, date, owner) values "
+                f"({uid}, {sleep_pk}, {wake_pk}, {score}, '{date.strftime(DATE_FORMAT)}', {uid});"
             )
             self.conn.commit()
 
@@ -83,13 +83,31 @@ class DBManager:
             )
             return cur.fetchone()
 
-    def get_compare_score(self, my_uid, other_uid, date):
+    def get_compare_score(self, my_uid, other_uid, date, dur=True):
+        op = ">=" if dur else "="
         with self.conn.cursor() as cur:
             cur.execute(
-                f"select id, uid, score, date from score where uid in ({my_uid}, {other_uid}) "
-                f"and date>='{date.strftime(DATE_FORMAT)}'"
+                f"select id, owner, score, date from score where owner in ({my_uid}, {other_uid}) "
+                f"and date{op}'{date.strftime(DATE_FORMAT)}'"
             )
             return cur.fetchall()
+
+    def get_day_score(self, date):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"select id, uid, score from score where date='{date.strftime(DATE_FORMAT)}' order by score desc;"
+            )
+            return cur.fetchall()
+
+    def get_owned_score(self, uid, date):
+        with self.conn.cursor() as cur:
+            cur.execute(f"select id, score from score where owner={uid} and date='{date.strftime(DATE_FORMAT)}';")
+            return cur.fetchone()
+
+    def set_owner(self, pk, uid):
+        with self.conn.cursor() as cur:
+            cur.execute(f"update score set owner={uid} where id={pk}")
+            self.conn.commit()
 
     def get_attack_state(self, uid):
         with self.conn.cursor() as cur:
@@ -143,3 +161,11 @@ class DBManager:
         with self.conn.cursor() as cur:
             cur.execute(f"delete from attack where uid={uid};")
             self.conn.commit()
+
+    def get_standby_attack(self, date):
+        with self.conn.cursor() as cur:
+            cur.execute(
+                "select uid, target, swap_date from attack where state=4 and "
+                f"attack_date='{date.strftime(DATE_FORMAT)}' order by confirmed_at asc;"
+            )
+            return cur.fetchall()
