@@ -169,3 +169,8 @@ class DBManager:
                 f"attack_date='{date.strftime(DATE_FORMAT)}' order by confirmed_at asc;"
             )
             return cur.fetchall()
+
+    def reset_attack_record(self):
+        with self.conn.cursor() as cur:
+            cur.execute("delete from attack where state=5;")
+            self.conn.commit()

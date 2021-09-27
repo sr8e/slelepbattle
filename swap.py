@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 
 import discord
@@ -6,6 +7,7 @@ from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
 
+action = sys.argv[1]
 intent = discord.Intents.default()
 intent.members = True
 client = discord.Client(intents=intent)
@@ -54,10 +56,20 @@ async def swap():
                 await channel.send(f"{my_user.name} -> {target_user.name} の攻撃は、失敗しました。")
 
 
+async def reset_stock():
+    channel = client.get_channel(CHANNEL_ID)
+    with DBManager() as db:
+        db.reset_attack_record()
+        await channel.send("攻撃のストックがリセットされました。")
+
+
 @client.event
 async def on_ready():
     print(f"{client.user} (for swap) is ready.")
-    await swap()
+    if action == "swap":
+        await swap()
+    elif action == "reset":
+        await reset_stock()
     await client.close()
 
 client.run(DISCORD_TOKEN)
