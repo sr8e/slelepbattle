@@ -23,3 +23,6 @@ DISCORDBOT_TOKEN=xxxxxxEXAMPLETOKENxxxxxx.xxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxx
 CHANNEL_ID=000000000000000000
 DATABASE_URL=postgres://username:dbpass@localhost:5432/dbname
 ```
+
+## Database setup
+`$ psql -U username -d dbname < createtable.sql`
