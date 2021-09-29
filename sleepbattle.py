@@ -4,6 +4,7 @@ from datetime import datetime, time, timedelta, timezone
 
 import discord
 
+from ui import UIViewManager
 from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
@@ -16,7 +17,9 @@ DISP_DATE_FORMAT = "%m/%d"
 DISP_TIME_FORMAT = "%H:%M"
 DISP_DATETIME_FORMAT = "%m/%d %H:%M"
 
-client = discord.Client()
+intent = discord.Intents.default()
+intent.members = True
+client = discord.Client(intents=intent)
 
 
 def calculate_score(sleeptime, waketime, lastwaketime):
@@ -70,12 +73,35 @@ async def on_message(message):
 
     channel = message.channel
     uid = message.author.id
+    time = set_timezone(message.created_at)
 
     if isinstance(channel, discord.DMChannel):
-        pass
-        # todo: surprise attack
+        with DBManager() as db:
+            state = db.get_attack_state(uid)
+
+            if message.content.startswith("abort") and 0 < state < 4:
+                db.delete_attack_record(uid)
+                await channel.send("攻撃の設定を中断しました。")
+                return
+            if message.content.startswith("cancel") and 0 < state < 5:
+                db.delete_attack_record(uid)
+                await channel.send("攻撃を中止しました。")
+                return
+
+        if 0 < state < 4:
+            await channel.send("攻撃の設定が途中です。`abort` または `cancel` で中断します。")
+            return
+        if state == 4:
+            await channel.send("攻撃の設定が完了しています。`cancel` で攻撃を中止できます。")
+            return
+        if state == 5:
+            await channel.send("攻撃は完了しています。")
+            return
+
+        vm = UIViewManager(uid, client, time.date())
+        await vm.begin_configure(channel)
+
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
-        time = set_timezone(message.created_at)
 
         if (match_s := re.search(SLEEPPATTERN, message.content, flags=re.M)) is not None:
             with DBManager() as db:
@@ -122,7 +148,7 @@ async def on_message(message):
                 await channel.send(f'起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}')
 
                 date, score = calculate_score(last_sleep[1], waketime, last_waketime)
-                if (sameday_score := db.get_score(uid, date)) is None:
+                if (sameday_score := db.get_raw_score(uid, date)) is None:
                     db.insert_score(uid, last_sleep[0], wake_pk, score, date)
                     await channel.send(f"{date.strftime(DISP_DATE_FORMAT)}のスコアを記録しました: {score:.4g}")
                 elif sameday_score[3] < score:
