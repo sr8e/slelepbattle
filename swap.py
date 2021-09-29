@@ -26,7 +26,7 @@ async def swap():
         today_scores = {t[1]: t[2] for t in db.get_day_score(date)}
         sorted_attacks = sorted(
             attacks,
-            key=lambda t: today_scores[t[0]] if t[0] in today_scores else 0,
+            key=lambda t: today_scores.get(t[0], 0),
             reverse=True
         )
 
@@ -35,7 +35,7 @@ async def swap():
             my_user = client.get_user(my_uid)
             target_user = client.get_user(target_uid)
 
-            if today_scores[my_uid] > today_scores[target_uid]:
+            if today_scores.get(my_uid, 0) > today_scores.get(target_uid, 0):
                 r = {t[1]: t for t in db.get_compare_score(*atk, dur=False)}
                 if (origin_score := r[my_uid][2]) < (target_score := r[target_uid][2]):
                     db.set_owner(r[my_uid][0], target_uid)
