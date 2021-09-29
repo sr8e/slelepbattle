@@ -1,13 +1,11 @@
 import re
-
 from datetime import datetime, time, timedelta, timezone
 
 import discord
 
-from ui import UIViewManager
 from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
-
+from ui import UIViewManager
 
 WAKEPATTERN = r"^(?:[お起]きた|起床|おはよう)(.+)?"
 SLEEPPATTERN = r"^(?:[ね寝]る|就寝|おやすみ|ぽやしみ)(.+)?"
@@ -35,7 +33,11 @@ def calculate_score(sleeptime, waketime, lastwaketime):
 
     sleep_score = max(1 - max(sleep_f - sleeptime, sleeptime - sleep_l, TD_ZERO) / TD_WIDTH, 0)
     wake_score = max(1 - max(wake_f - waketime, waketime - wake_l, TD_ZERO) / TD_WIDTH, 0)
-    habit_score = 1 if lastwaketime is None or abs(lastwaketime + timedelta(days=1) - waketime) < TD_HABIT else 0.9
+    habit_score = (
+        1
+        if lastwaketime is None or abs(lastwaketime + timedelta(days=1) - waketime) < TD_HABIT
+        else 0.9
+    )
 
     return date, 100 * sleep_score * wake_score * habit_score
 
@@ -63,7 +65,7 @@ def set_timezone(utctime):
 
 @client.event
 async def on_ready():
-    print(f'{client.user} is ready.')
+    print(f"{client.user} is ready.")
 
 
 @client.event
@@ -145,7 +147,7 @@ async def on_message(message):
                 last_waketime = last_wake[1] if last_wake is not None else None
 
                 wake_pk = db.insert_waketime(uid, waketime, message.id)
-                await channel.send(f'起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}')
+                await channel.send(f"起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}")
 
                 date, score = calculate_score(last_sleep[1], waketime, last_waketime)
                 if (sameday_score := db.get_raw_score(uid, date)) is None:
@@ -155,7 +157,8 @@ async def on_message(message):
                     db.update_score(sameday_score[0], last_sleep[0], wake_pk, score)
                     await channel.send(
                         f"{date.strftime(DISP_DATE_FORMAT)}のスコアを更新しました: "
-                        f"{sameday_score[3]:.4g} -> {score:.4g}")
+                        f"{sameday_score[3]:.4g} -> {score:.4g}"
+                    )
                 else:
                     await channel.send(
                         f"{date.strftime(DISP_DATE_FORMAT)}の既存のスコア{sameday_score[3]:.4g}"

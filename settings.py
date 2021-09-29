@@ -1,9 +1,7 @@
 import os
-
 from datetime import timedelta, timezone
 
 from dotenv import load_dotenv
-
 
 load_dotenv()
 DISCORD_TOKEN = os.environ.get("DISCORDBOT_TOKEN")
