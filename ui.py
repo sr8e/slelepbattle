@@ -1,6 +1,6 @@
-import discord
-
 from datetime import datetime, timedelta
+
+import discord
 
 from db import DBManager
 from settings import DATE_FORMAT, TIMEZONE
@@ -19,7 +19,7 @@ class BaseSelect(discord.ui.Select):
 
 class SelectTarget(BaseSelect):
     async def callback(self, interaction):
-        target = int(interaction.data['values'][0])
+        target = int(interaction.data["values"][0])
 
         with DBManager() as db:
             if db.get_attack_state(self.uid) != 1:
@@ -36,8 +36,7 @@ class SelectTarget(BaseSelect):
 
         if len(swappable) == 0:
             await interaction.response.edit_message(
-                content="入れ替え可能な日がありません。別の対象を選択してください。",
-                view=self.vm.who_to_attack()
+                content="入れ替え可能な日がありません。別の対象を選択してください。", view=self.vm.who_to_attack()
             )
 
         view = self.vm.when_to_swap(swappable, target)
@@ -49,12 +48,11 @@ class SelectTarget(BaseSelect):
 
 class SelectSwapDate(BaseSelect):
     async def callback(self, interaction):
-        swap_date = datetime.strptime(interaction.data['values'][0], DATE_FORMAT).date()
+        swap_date = datetime.strptime(interaction.data["values"][0], DATE_FORMAT).date()
 
         week_start = self.week_start()
         attackable = [
-            week_start + timedelta(days=i)
-            for i in range((self.init_date.weekday() + 1) % 7 + 2, 9)
+            week_start + timedelta(days=i) for i in range((self.init_date.weekday() + 1) % 7 + 2, 9)
         ]
 
         with DBManager() as db:
@@ -69,7 +67,7 @@ class SelectSwapDate(BaseSelect):
 
 class SelectAttackDate(BaseSelect):
     async def callback(self, interaction):
-        attack_date = datetime.strptime(interaction.data['values'][0], DATE_FORMAT).date()
+        attack_date = datetime.strptime(interaction.data["values"][0], DATE_FORMAT).date()
 
         with DBManager() as db:
             if db.get_attack_state(self.uid) != 3:
@@ -82,8 +80,8 @@ class SelectAttackDate(BaseSelect):
 
         await interaction.response.edit_message(
             content=f"攻撃の予約を完了しました (対象: {target_u.name}, 入替日: {info[2].strftime('%m/%d')}, "
-                    f"攻撃日: {attack_date.strftime('%m/%d')})",
-            view=None
+            f"攻撃日: {attack_date.strftime('%m/%d')})",
+            view=None,
         )
 
 
@@ -109,11 +107,7 @@ class UIViewManager:
     def who_to_attack(self):
         view = discord.ui.View(timeout=60)
         options = [discord.SelectOption(label=u.name, value=u.id) for u in self.users]
-        selection = SelectTarget(
-            self,
-            placeholder="攻撃対象を選択...",
-            options=options
-        )
+        selection = SelectTarget(self, placeholder="攻撃対象を選択...", options=options)
         view.add_item(selection)
         return view
 
@@ -123,31 +117,20 @@ class UIViewManager:
             discord.SelectOption(
                 label=d.strftime("%m/%d (%a)"),
                 value=d.strftime(DATE_FORMAT),
-                description=f"Your Point: {v[self.uid]:.4g}, Target's Point: {v[target]:.4g}"
+                description=f"Your Point: {v[self.uid]:.4g}, Target's Point: {v[target]:.4g}",
             )
             for d, v in swappable_dates.items()
         ]
-        selection = SelectSwapDate(
-            self,
-            placeholder="スコアを入れ替える日を選択...",
-            options=options
-        )
+        selection = SelectSwapDate(self, placeholder="スコアを入れ替える日を選択...", options=options)
         view.add_item(selection)
         return view
 
     def when_to_attack(self, attackable_dates):
         view = discord.ui.View(timeout=60)
         options = [
-            discord.SelectOption(
-                label=d.strftime("%m/%d (%a)"),
-                value=d.strftime(DATE_FORMAT)
-            )
+            discord.SelectOption(label=d.strftime("%m/%d (%a)"), value=d.strftime(DATE_FORMAT))
             for d in attackable_dates
         ]
-        selection = SelectAttackDate(
-            self,
-            placeholder="攻撃をする日を選択...",
-            options=options
-        )
+        selection = SelectAttackDate(self, placeholder="攻撃をする日を選択...", options=options)
         view.add_item(selection)
         return view

@@ -4,7 +4,6 @@ from settings import DATABASE_URL, DATE_FORMAT, DATETIME_FORMAT
 
 
 class DBManager:
-
     def __init__(self):
         self.conn = self.get_connection()
 
@@ -67,12 +66,16 @@ class DBManager:
 
     def get_last_sleep(self, uid):
         with self.conn.cursor() as cur:
-            cur.execute(f"select id, sleeptime, post_id from sleeptime where uid={uid} order by id desc;")
+            cur.execute(
+                f"select id, sleeptime, post_id from sleeptime where uid={uid} order by id desc;"
+            )
             return cur.fetchone()
 
     def get_last_wake(self, uid):
         with self.conn.cursor() as cur:
-            cur.execute(f"select id, waketime, post_id from waketime where uid={uid} order by id desc;")
+            cur.execute(
+                f"select id, waketime, post_id from waketime where uid={uid} order by id desc;"
+            )
             return cur.fetchone()
 
     def get_raw_score(self, uid, date):
@@ -101,7 +104,9 @@ class DBManager:
 
     def get_owned_score(self, uid, date):
         with self.conn.cursor() as cur:
-            cur.execute(f"select id, score from score where owner={uid} and date='{date.strftime(DATE_FORMAT)}';")
+            cur.execute(
+                f"select id, score from score where owner={uid} and date='{date.strftime(DATE_FORMAT)}';"
+            )
             return cur.fetchone()
 
     def set_owner(self, pk, uid):
@@ -122,7 +127,9 @@ class DBManager:
 
     def get_active_users(self, date_since):
         with self.conn.cursor() as cur:
-            cur.execute(f"select distinct uid from score where date>='{date_since.strftime(DATE_FORMAT)}';")
+            cur.execute(
+                f"select distinct uid from score where date>='{date_since.strftime(DATE_FORMAT)}';"
+            )
             return [t[0] for t in cur.fetchall()]
 
     def set_attack_state(self, uid, state):
@@ -154,7 +161,9 @@ class DBManager:
 
     def get_attack_info(self, uid):
         with self.conn.cursor() as cur:
-            cur.execute(f"select state, target, swap_date, attack_date from attack where uid={uid};")
+            cur.execute(
+                f"select state, target, swap_date, attack_date from attack where uid={uid};"
+            )
             return cur.fetchone()
 
     def delete_attack_record(self, uid):

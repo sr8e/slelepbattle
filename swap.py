@@ -6,7 +6,6 @@ import discord
 from db import DBManager
 from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
 
-
 action = sys.argv[1]
 intent = discord.Intents.default()
 intent.members = True
@@ -24,11 +23,7 @@ async def swap():
             return
 
         today_scores = {t[1]: t[2] for t in db.get_day_score(date)}
-        sorted_attacks = sorted(
-            attacks,
-            key=lambda t: today_scores.get(t[0], 0),
-            reverse=True
-        )
+        sorted_attacks = sorted(attacks, key=lambda t: today_scores.get(t[0], 0), reverse=True)
 
         for atk in sorted_attacks:
             my_uid, target_uid, swap_date = atk
@@ -71,5 +66,6 @@ async def on_ready():
     elif action == "reset":
         await reset_stock()
     await client.close()
+
 
 client.run(DISCORD_TOKEN)
