@@ -25,13 +25,13 @@ class SelectTarget(BaseSelect):
             if db.get_attack_state(self.uid) != 1:
                 return
 
-            score_tup = db.get_compare_score(self.uid, target, self.week_start())
+            score_recs = db.get_compare_score(self.uid, target, self.week_start())
 
         scores = {}
-        for t in score_tup:
-            if t[3] not in scores:
-                scores[t[3]] = {}
-            scores[t[3]][t[1]] = t[2]
+        for s in score_recs:
+            if s.date not in scores:
+                scores[s.date] = {}
+            scores[s.date][s.owner] = s.score
         swappable = {d: v for d, v in scores.items() if len(v) == 2 and v[self.uid] < v[target]}
 
         if len(swappable) == 0:
@@ -76,10 +76,10 @@ class SelectAttackDate(BaseSelect):
             db.set_attack_date(self.uid, attack_date, datetime.now().astimezone(tz=TIMEZONE))
             info = db.get_attack_info(self.uid)
 
-        target_u = self.vm.client.get_user(info[1])
+        target_u = self.vm.client.get_user(info.target)
 
         await interaction.response.edit_message(
-            content=f"攻撃の予約を完了しました (対象: {target_u.name}, 入替日: {info[2].strftime('%m/%d')}, "
+            content=f"攻撃の予約を完了しました (対象: {target_u.name}, 入替日: {info.swap_date.strftime('%m/%d')}, "
             f"攻撃日: {attack_date.strftime('%m/%d')})",
             view=None,
         )

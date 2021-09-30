@@ -119,7 +119,7 @@ async def on_message(message):
                     sleeptime = get_datetime_from_input(*match_spec_s.group(1, 2))
 
                     last_wake = db.get_last_wake(uid)
-                    if last_wake is not None and sleeptime < last_wake[1]:
+                    if last_wake is not None and sleeptime < last_wake.waketime:
                         await channel.send("就寝時刻が前回の起床より早いです。")
                         return
 
@@ -139,29 +139,29 @@ async def on_message(message):
                         await channel.send("時刻指定フォーマットに合致しません！(`[[m]m/[d]d] [H]H:MM`)")
                         return
                     waketime = get_datetime_from_input(*match_spec_w.group(1, 2))
-                    if waketime < last_sleep[1]:
+                    if waketime < last_sleep.sleeptime:
                         await channel.send("起床時刻が就寝より早いです。")
                         return
 
                 last_wake = db.get_last_wake(uid)
-                last_waketime = last_wake[1] if last_wake is not None else None
+                last_waketime = last_wake.waketime if last_wake is not None else None
 
                 wake_pk = db.insert_waketime(uid, waketime, message.id)
                 await channel.send(f"起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}")
 
-                date, score = calculate_score(last_sleep[1], waketime, last_waketime)
+                date, score = calculate_score(last_sleep.sleeptime, waketime, last_waketime)
                 if (sameday_score := db.get_raw_score(uid, date)) is None:
-                    db.insert_score(uid, last_sleep[0], wake_pk, score, date)
+                    db.insert_score(uid, last_sleep.pk, wake_pk, score, date)
                     await channel.send(f"{date.strftime(DISP_DATE_FORMAT)}のスコアを記録しました: {score:.4g}")
-                elif sameday_score[3] < score:
-                    db.update_score(sameday_score[0], last_sleep[0], wake_pk, score)
+                elif sameday_score.score < score:
+                    db.update_score(sameday_score.pk, last_sleep.pk, wake_pk, score)
                     await channel.send(
                         f"{date.strftime(DISP_DATE_FORMAT)}のスコアを更新しました: "
-                        f"{sameday_score[3]:.4g} -> {score:.4g}"
+                        f"{sameday_score.score:.4g} -> {score:.4g}"
                     )
                 else:
                     await channel.send(
-                        f"{date.strftime(DISP_DATE_FORMAT)}の既存のスコア{sameday_score[3]:.4g}"
+                        f"{date.strftime(DISP_DATE_FORMAT)}の既存のスコア{sameday_score.score:.4g}"
                         f"より低いので更新されませんでした: {score:.4g}"
                     )
 
