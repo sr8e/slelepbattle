@@ -1,6 +1,47 @@
+from datetime import date, datetime
+from typing import List, NamedTuple
+
 import psycopg2
 
 from settings import DATABASE_URL, DATE_FORMAT, DATETIME_FORMAT
+
+SLEEPTIME_COLUMNS = "id, uid, post_id, sleeptime"
+WAKETIME_COLUMNS = "id, uid, post_id, waketime"
+SCORE_COLUMNS = "id, uid, sleep_pk, wake_pk, score, date, owner"
+ATTACK_COLUMNS = "uid, state, target, attack_date, swap_date, confirmed_at"
+
+
+class SleepTime(NamedTuple):
+    pk: int
+    uid: int
+    post_id: int
+    sleeptime: datetime
+
+
+class WakeTime(NamedTuple):
+    pk: int
+    uid: int
+    post_id: int
+    waketime: datetime
+
+
+class Score(NamedTuple):
+    pk: int
+    uid: int
+    sleep_pk: int
+    wake_pk: int
+    score: float
+    date: date
+    owner: int
+
+
+class Attack(NamedTuple):
+    uid: int
+    state: int
+    target: int
+    attack_date: date
+    swap_date: date
+    confirmed_at: datetime
 
 
 class DBManager:
