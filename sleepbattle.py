@@ -95,7 +95,9 @@ async def on_message(message):
                     return
 
                 atk = db.get_attack_info(uid)
-                limit = datetime.combine(atk.attack_date, time(hour=18, minute=30, tzinfo=TIMEZONE)) - timedelta(days=1)
+                limit = datetime.combine(
+                    atk.attack_date, time(hour=18, minute=30, tzinfo=TIMEZONE)
+                ) - timedelta(days=1)
                 if post_time < limit:
                     db.delete_attack_record(uid)
                     await channel.send("攻撃を中止しました。")
