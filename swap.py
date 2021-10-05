@@ -4,7 +4,7 @@ from datetime import datetime
 import discord
 
 from db import DBManager
-from settings import CHANNEL_ID, DISCORD_TOKEN, TIMEZONE
+from settings import DISCORD_TOKEN, NOTIFY_CHANNEL_ID, TIMEZONE
 
 action = sys.argv[1]
 intent = discord.Intents.default()
@@ -15,7 +15,7 @@ date = datetime.now().astimezone(tz=TIMEZONE).date()
 
 
 async def swap():
-    channel = client.get_channel(CHANNEL_ID)
+    channel = client.get_channel(NOTIFY_CHANNEL_ID)
     with DBManager() as db:
         attacks = db.get_standby_attack(date)
         if len(attacks) == 0:
@@ -57,7 +57,7 @@ async def swap():
 
 
 async def reset_stock():
-    channel = client.get_channel(CHANNEL_ID)
+    channel = client.get_channel(NOTIFY_CHANNEL_ID)
     with DBManager() as db:
         db.reset_attack_record()
         await channel.send("攻撃のストックがリセットされました。")
