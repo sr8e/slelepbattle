@@ -39,7 +39,7 @@ def calculate_score(sleeptime, waketime, lastwaketime):
         else 0.9
     )
 
-    return date, 100 * sleep_score * wake_score * habit_score
+    return date, sleep_score, wake_score, habit_score
 
 
 def get_datetime_from_input(date, time):
@@ -164,20 +164,25 @@ async def on_message(message):
                 wake_pk = db.insert_waketime(uid, waketime, message.id)
                 await channel.send(f"起床を記録しました: {waketime.strftime(DISP_DATETIME_FORMAT)}")
 
-                date, score = calculate_score(last_sleep.sleeptime, waketime, last_waketime)
+                date, ss, ws, hs = calculate_score(last_sleep.sleeptime, waketime, last_waketime)
+                score = 100 * ss * ws * hs
                 if (sameday_score := db.get_raw_score(uid, date)) is None:
                     db.insert_score(uid, last_sleep.pk, wake_pk, score, date)
-                    await channel.send(f"{date.strftime(DISP_DATE_FORMAT)}のスコアを記録しました: {score:.4g}")
+                    await channel.send(
+                        f"{date.strftime(DISP_DATE_FORMAT)}のスコアを記録しました: "
+                        f"100 x {ss:.2f} x {ws:.2f} x {hs:.2f} = {score:.4g}"
+                    )
                 elif sameday_score.score < score:
                     db.update_score(sameday_score.pk, last_sleep.pk, wake_pk, score)
                     await channel.send(
                         f"{date.strftime(DISP_DATE_FORMAT)}のスコアを更新しました: "
-                        f"{sameday_score.score:.4g} -> {score:.4g}"
+                        f"100 x {ss:.2f} x {ws:.2f} x {hs:.2f} = {score:.4g}\n"
+                        f"(更新前のスコア: {sameday_score.score:.4g})"
                     )
                 else:
                     await channel.send(
                         f"{date.strftime(DISP_DATE_FORMAT)}の既存のスコア{sameday_score.score:.4g}"
-                        f"より低いので更新されませんでした: {score:.4g}"
+                        f"より低いので更新されませんでした: 100 x {ss:.2f} x {ws:.2f} x {hs:.2f} = {score:.4g}"
                     )
 
 
