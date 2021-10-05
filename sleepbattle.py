@@ -75,23 +75,36 @@ async def on_message(message):
 
     channel = message.channel
     uid = message.author.id
-    time = set_timezone(message.created_at)
+    post_time = set_timezone(message.created_at)
 
     if isinstance(channel, discord.DMChannel):
         with DBManager() as db:
             state = db.get_attack_state(uid)
 
-            if message.content.startswith("abort") and 0 < state < 4:
-                db.delete_attack_record(uid)
-                await channel.send("攻撃の設定を中断しました。")
+            if message.content.startswith("abort"):
+                if 0 < state < 4:
+                    db.delete_attack_record(uid)
+                    await channel.send("攻撃の設定を中断しました。")
+                else:
+                    await channel.send("そのコマンドは今は使えません。")
                 return
-            if message.content.startswith("cancel") and 0 < state < 5:
-                db.delete_attack_record(uid)
-                await channel.send("攻撃を中止しました。")
+
+            if message.content.startswith("cancel"):
+                if state != 4:
+                    await channel.send("そのコマンドは今は使えません。")
+                    return
+
+                atk = db.get_attack_info(uid)
+                limit = datetime.combine(atk.attack_date, time(hour=18, minute=30, tzinfo=TIMEZONE)) - timedelta(days=1)
+                if post_time < limit:
+                    db.delete_attack_record(uid)
+                    await channel.send("攻撃を中止しました。")
+                else:
+                    await channel.send("攻撃中止の期限を過ぎています。")
                 return
 
         if 0 < state < 4:
-            await channel.send("攻撃の設定が途中です。`abort` または `cancel` で中断します。")
+            await channel.send("攻撃の設定が途中です。`abort` で中断します。")
             return
         if state == 4:
             await channel.send("攻撃の設定が完了しています。`cancel` で攻撃を中止できます。")
@@ -100,7 +113,7 @@ async def on_message(message):
             await channel.send("攻撃は完了しています。")
             return
 
-        vm = UIViewManager(uid, client, time.date())
+        vm = UIViewManager(uid, client, post_time.date())
         await vm.begin_configure(channel)
 
     elif isinstance(channel, discord.TextChannel) and channel.id == CHANNEL_ID:
@@ -111,7 +124,7 @@ async def on_message(message):
                     await channel.send("前回の睡眠が完了していません！")
                     return
 
-                sleeptime = time
+                sleeptime = post_time
                 if (spectime_s := match_s.group(1)) is not None:
                     if (match_spec_s := re.search(TIMESPECPATTERN, spectime_s)) is None:
                         await channel.send("時刻指定フォーマットに合致しません！(`[[m]m/[d]d] [H]H:MM`)")
@@ -132,7 +145,7 @@ async def on_message(message):
                     await channel.send("睡眠が開始されていません！")
                     return
 
-                waketime = time
+                waketime = post_time
                 last_sleep = db.get_last_sleep(uid)
                 if (spectime_w := match_w.group(1)) is not None:
                     if (match_spec_w := re.search(TIMESPECPATTERN, spectime_w)) is None:
