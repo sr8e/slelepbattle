@@ -59,7 +59,7 @@ async def swap():
 async def export_table(prev=False):
     channel = client.get_channel(NOTIFY_CHANNEL_ID)
     d = datetime.now().astimezone(TIMEZONE).date()
-    if not prev and (d.weekday() + 1) < 2:
+    if not prev and (d.weekday() + 1) % 7 < 2:
         await export_table(True)
 
     week_start = d - timedelta(days=(d.weekday() + 1) % 7)
