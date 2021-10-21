@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import List, NamedTuple
 
 import psycopg2
@@ -147,6 +147,15 @@ class DBManager:
             cur.execute(
                 f"select {SCORE_COLUMNS} from score where date='{date.strftime(DATE_FORMAT)}' "
                 "order by score desc;"
+            )
+            return [Score(*t) for t in cur.fetchall()]
+
+    def get_week_score(self, week_start) -> List[Score]:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"select {SCORE_COLUMNS} from score where date between "
+                f"'{week_start.strftime(DATE_FORMAT)}' and "
+                f"'{(week_start + timedelta(days=6)).strftime(DATE_FORMAT)}'"
             )
             return [Score(*t) for t in cur.fetchall()]
 
