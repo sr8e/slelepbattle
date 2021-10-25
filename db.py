@@ -95,15 +95,14 @@ class DBManager:
             self.conn.commit()
 
     def is_last_sleep_completed(self, uid) -> bool:
-        with self.conn.cursor() as cur:
-            res_sleeptime = self.get_last_sleep(uid)
-            if res_sleeptime is None:
-                return True
-            cur.execute(f"select sleep_pk from score where uid={uid} order by id desc;")
-            res_score = cur.fetchone()
-            if res_score is None:
-                return False
-            return res_sleeptime[0] == res_score[0]
+        res_sleeptime = self.get_last_sleep(uid)
+        if res_sleeptime is None:
+            return True
+        res_waketime = self.get_last_wake(uid)
+        if res_waketime is None:
+            return False
+
+        return res_sleeptime.sleeptime <= res_waketime.waketime
 
     def get_last_sleep(self, uid) -> SleepTime:
         with self.conn.cursor() as cur:
