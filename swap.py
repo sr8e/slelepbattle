@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import discord
 
 from db import DBManager
-from settings import DISCORD_TOKEN, NOTIFY_CHANNEL_ID, TIMEZONE
+from settings import BEGINNING_DATE, DISCORD_TOKEN, NOTIFY_CHANNEL_ID, TIMEZONE
 
 action = sys.argv[1]
 intent = discord.Intents.default()
@@ -81,7 +81,8 @@ async def export_table(prev=False):
     owners_sorted = sorted(scores_dict, key=lambda k: scores_dict[k]["avg"], reverse=True)
 
     week_val = "先" if prev else "今"
-    table = f"{week_val}週の順位表({d.strftime('%m/%d')}現在)```Pos | "
+    week_num = (week_start - BEGINNING_DATE).days // 7 + 1
+    table = f"{week_val}週 (第{week_num}週) の順位表({d.strftime('%m/%d')}現在)```Pos | "
     for i in range(7):
         table += (week_start + timedelta(days=i)).strftime(" %m/%d ")
     table += (
