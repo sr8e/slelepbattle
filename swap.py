@@ -75,8 +75,9 @@ async def export_table(prev=False):
             scores_dict[s.owner] = {}
         scores_dict[s.owner][s.date] = s
 
+    days = 7 if prev else (d.weekday() + 1) % 7 + 1
     for owner, v in scores_dict.items():
-        scores_dict[owner]["avg"] = sum(map(lambda s: s.score, v.values())) / len(v)
+        scores_dict[owner]["avg"] = sum(map(lambda s: s.score, v.values())) / days
 
     owners_sorted = sorted(scores_dict, key=lambda k: scores_dict[k]["avg"], reverse=True)
 
