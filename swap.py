@@ -71,7 +71,7 @@ async def export_table(prev=False):
 
     scores_dict = {}
     for s in scores:
-        if s.uid not in scores_dict:
+        if s.owner not in scores_dict:
             scores_dict[s.owner] = {}
         scores_dict[s.owner][s.date] = s
 
