@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+    app:
+        build: ./dockerfiles
+        container_name: sleepbattle_app
+        depends_on:
+          - db
+        volumes:
+          - .:/sleepbattle
+        environment:
+            DISCORDBOT_TOKEN: ${DISCORDBOT_TOKEN}
+            CHANNEL_ID: ${CHANNEL_ID}
+            NOTIFY_CHANNEL_ID: ${NOTIFY_CHANNEL_ID}
+            DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@sleepbattle_db:5432/sleepbattle
+            BEGINNING_DATE: ${BEGINNING_DATE}
+            TZ: Asia/Tokyo
+    db:
+        image: postgres:13.4
+        container_name: sleepbattle_db
+        ports:
+          - 5433:5432
+        volumes:
+          - db_data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_USER: ${POSTGRES_USER}
+            PGDAGA: /var/lib/postgresql/data
+            TZ: Asia/Tokyo
+
+volumes:
+    db_data:
+
