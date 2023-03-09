@@ -38,4 +38,16 @@ BEGINNING_DATE=1970-01-01
 |`BEGINNING_DATE`|The date when logging started. Should be Sunday|
 
 ## Database setup
+`$ createdb -U username dbname`
+
 `$ psql -U username -d dbname < createtable.sql`
+
+## For docker
+Just type:
+
+`$ docker compose up --build -d`
+
+Database creation differs a little bit:
+
+`$ createdb -h localhost -U username -p 5433 dbname`
+ 

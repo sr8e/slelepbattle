@@ -1,0 +1,5 @@
+# minute hour day month wday user cmd
+
+# notice that scheduled time is in UTC
+30 9 * * * root . /.cron_env; /usr/local/bin/python -u /sleepbattle/swap.py swap >> /var/log/swap
+0 15 * * mon root . /.cron_env; /usr/local/bin/python -u /sleepbattle/swap.py reset >> /var/log/swap
