@@ -5,15 +5,15 @@ Sleepbattle is a discord bot which logs and scores sleep of server members to ma
 
 ## Environments
 - python 3.9.5
-  - discord.py 2.0.0a (from [GitHub](https://github.com/Rapptz/discord.py))
-  - psycopg2-binary 2.9.1
-  - python-dotenv 0.19.0
+  - discord.py 2.2.2
+  - psycopg2-binary 2.9.5
+  - python-dotenv 1.0.0
 - postgreSQL 13.4
 
 ### Linting
-- flake8 3.9.2
-- black 21.9b0
-- isort 5.9.3
+- flake8 6.0.0
+- black 23.1.0
+- isort 5.12.0
 
 ## Setting up environment
 `$ pip install -r requirements.txt`

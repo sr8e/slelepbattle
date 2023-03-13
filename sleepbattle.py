@@ -17,6 +17,7 @@ DISP_DATETIME_FORMAT = "%m/%d %H:%M"
 
 intent = discord.Intents.default()
 intent.members = True
+intent.message_content = True
 client = discord.Client(intents=intent)
 
 
